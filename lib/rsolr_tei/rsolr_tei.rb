@@ -6,7 +6,6 @@ module RsolrTei
     attr_accessor :url
     attr_accessor :facet_fields
     # TODO not sure that these need to be accessible
-    # but I want to test them so...meh
     attr_accessor :default_query_params
     attr_accessor :default_facet_params
 
@@ -31,7 +30,6 @@ module RsolrTei
       if RsolrTei.is_url?(url)
         @url = url
         # defaults
-        @facets = facets
         @facet_fields = facets
         @default_facet_params = @@facet_params
         @default_query_params = @@query_params
@@ -40,21 +38,25 @@ module RsolrTei
       end
     end
 
+    def get_facets(fields=@facet_fields, params=@default_facet_params)
+      params["facet.field"] = fields
+      raw = connect(params)
+    end
+
     def set_default_facet_params(params)
-      @default_facet_params = _override_params(@default_facet_params, params)
+      @default_facet_params = RsolrTei.override_params(@default_facet_params, params)
     end
 
     def set_default_query_params(params)
-      @default_query_params = _override_params(@default_query_params, params)
+      @default_query_params = RsolrTei.override_params(@default_query_params, params)
     end
 
     private
 
-    # TODO finish this thing
     def connect(params)
-      # sanitize params?
-      res _connect(params)
-      # error handling
+      req_params = RsolrTei.override_params(@default_facet_params, params)
+      res = _connect(req_params)
+      # error handling or parsing of response?
     end
 
     def _connect(params)
@@ -64,14 +66,9 @@ module RsolrTei
         res = conn.get "select", :params => params
         puts "Solr Request URL: #{res.request[:uri]}"
       rescue
-
+        raise "Unable to contact solr, something went wrong with the query or the url"
       end
       return res
-    end
-
-    def _override_params(existing, requested)
-      # if existing, requested share a key, requested will triumph
-      return existing.merge(requested)
     end
 
   end  # end of Query class

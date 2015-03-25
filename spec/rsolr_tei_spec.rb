@@ -13,6 +13,18 @@ describe RsolrTei do
       expect(RsolrTei.is_url?("nota.url")).to be_falsey
     end
   end
+
+  describe '#override_params' do
+    it 'merges two hashes, giving preference to one' do
+      one = {:a => "bad", :b => "good", :c => "bad"}
+      two = {:a => "good", :c => "good", :d => "good"}
+      # use send to get at the private method
+      new_hash = RsolrTei.override_params(one, two)
+      expect(new_hash.length).to eq 4
+      expect(new_hash[:a]).to eq "good"
+      expect(new_hash[:c]).to eq "good"
+    end
+  end
 end
 
 
@@ -40,9 +52,9 @@ describe RsolrTei::Query do
     end
   end
 
-  describe '#set_facet_params' do
+  describe '#set_default_facet_params' do
     it 'sets default facet params for instance' do
-      facet_p = subject.set_facet_params({:q => "category:memorabilia", :sort => "date desc"})
+      facet_p = subject.set_default_facet_params({:q => "category:memorabilia", :sort => "date desc"})
       expect(facet_p[:q]).to eq "category:memorabilia"
       expect(facet_p[:sort]).to eq "date desc"
       expect(facet_p[:start]).to eq 0
@@ -51,27 +63,18 @@ describe RsolrTei::Query do
     end
   end
 
-  describe '#set_query_params' do
+  describe '#set_default_query_params' do
     it 'sets default query params for instance' do
-      query_p = subject.set_query_params({:q => "category:memorabilia", :sort => "date desc"})
+      query_p = subject.set_default_query_params({:q => "category:memorabilia", :sort => "date desc"})
       expect(query_p[:q]).to eq "category:memorabilia"
       expect(query_p[:rows]).to eq 50
       expect(query_p[:sort]).to eq "date desc"
       expect(query_p[:fq]).to eq []
+      expect(subject.default_query_params[:q]).to eq "category:memorabilia"
+      expect(subject.default_query_params[:sort]).to eq "date desc"
     end
   end
 
-  describe '#_override_defaults' do
-    it 'merges two hashes, giving preference to one' do
-      one = {:a => "bad", :b => "good", :c => "bad"}
-      two = {:a => "good", :c => "good", :d => "good"}
-      # use send to get at the private method
-      new_hash = subject.send(:_override_params, one, two)
-      expect(new_hash.length).to eq 4
-      expect(new_hash[:a]).to eq "good"
-      expect(new_hash[:c]).to eq "good"
-    end
-  end
 
   describe '#instance variables' do
     it 'has a @url variable' do

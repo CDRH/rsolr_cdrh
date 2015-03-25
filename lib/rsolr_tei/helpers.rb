@@ -9,4 +9,9 @@ module RsolrTei
     return !!result  # convert to boolean
   end
 
+  def self.override_params(existing, requested)
+    # if existing, requested share a key, requested will triumph
+    return existing.merge(requested)
+  end
+
 end

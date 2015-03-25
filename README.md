@@ -15,7 +15,7 @@ gem 'rsolr_tei'
 
 And then execute:
 
-    $ bundle
+    $ bundle install
 
 Or install it yourself as:
 
@@ -24,6 +24,12 @@ Or install it yourself as:
 ## Usage
 
 TODO: Write usage instructions here
+
+## Run Tests
+If you have forked this gem, then you can run the following command to kick off the tests.
+```
+bundle exec rake spec
+```
 
 ## Contributing
 
