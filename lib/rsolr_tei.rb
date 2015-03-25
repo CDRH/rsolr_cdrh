@@ -1,5 +1,3 @@
 require "rsolr_tei/version"
-
-module RsolrTei
-  # Your code goes here...
-end
+require "rsolr_tei/rsolr_tei"
+require "rsolr_tei/helpers"
