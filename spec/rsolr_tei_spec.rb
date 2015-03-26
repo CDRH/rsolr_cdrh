@@ -26,6 +26,33 @@ describe RsolrTei do
     end
   end
 
+  describe '#escape' do
+    it 'fills in whitespace' do
+      text = "category:\"The Ballad of Bilbo Baggins\""
+      escaped = RsolrTei.escape(text)
+      expect(escaped).to eq "category:\"The%20Ballad%20of%20Bilbo%20Baggins\""
+    end
+  end
+
+  describe '#hash_to_s' do
+    it 'should turn hash with string keys into symbols' do
+      hash = {"a" => 1, "b" => 2, :c => "3"}
+      new_hash = RsolrTei.hash_to_s(hash)
+      expect(new_hash.length).to eq 3
+      expect(new_hash[:a]).to eq 1
+      expect(new_hash[:c]).to eq "3"
+    end
+    # TODO I do not know if this is ideal behavior
+    # but it is at least expected / recognized
+    it 'overwrites same named string vs symbols' do
+      hash = {"a" => "old", :a => "new", "b" => "bee"}
+      new_hash = RsolrTei.hash_to_s(hash)
+      expect(new_hash.length).to eq 2
+      expect(new_hash[:a]).to eq "new"
+      expect(new_hash[:b]).to eq "bee"
+    end
+  end
+
   describe '#is_url?' do
     it 'returns false for bad url' do
       expect(RsolrTei.is_url?("nota.url")).to be_falsey
@@ -43,6 +70,7 @@ describe RsolrTei do
       expect(new_hash[:c]).to eq "good"
     end
   end
+
 end
 
 
@@ -112,6 +140,27 @@ describe RsolrTei::Query do
     it 'should overwrite the existing facet fields' do
       expect(subject.facet_fields).to eq ["title", "category"]
       expect(subject.set_default_facet_fields("title", "dataType")).to eq ["title", "dataType"]
+    end
+  end
+
+  describe '#query' do
+    it 'retrieves the second 10 text objects' do
+      res = subject.query({:qfield => "category", :qtext => "texts", :page => 2, :rows => 10})
+      expect(res.length).to eq 10
+    end
+    it 'retrieves query that has spaces in term' do
+      res = subject.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
+      expect(res.length).to eq 29
+    end
+    it 'retrieves all newspapers created by Ethel Evans' do
+      params = {
+        :qfield => "subCategory",
+        :qtext => "newspapers",
+        :fqfield => "creator",
+        :fqtext => "Ethel Evans"
+      }
+      res = subject.query(params)
+      expect(res.length).to eq 13
     end
   end
 
