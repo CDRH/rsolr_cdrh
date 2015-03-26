@@ -38,9 +38,21 @@ module RsolrTei
       end
     end
 
+    # get_facets
+    #   Sends a request to solr to return facet information for given fields
+    #   Params: fields (to be faceted), params (to narrow / sort facets)
+    #   Returns: hash of hash ({"author" => {"Tolkien" => 12, "Asimov" => 8}})
     def get_facets(fields=@facet_fields, params=@default_facet_params)
       params["facet.field"] = fields
       raw = connect(params)
+      return _process_facets(raw)
+    end
+
+    def get_item_by_id(id)
+      res = connect({:q => "id:#{id}", :rows => "1"})
+      docs = _get_docs_from_response(res)
+      doc = docs.nil? ? nil : docs[0]
+      return doc
     end
 
     def set_default_facet_params(params)
@@ -51,11 +63,15 @@ module RsolrTei
       @default_query_params = RsolrTei.override_params(@default_query_params, params)
     end
 
+    def set_default_facet_fields(*fields)
+      # wipe existing fields, do not add to them
+      @facet_fields = fields
+    end
+
     private
 
-    def connect(params)
-      req_params = RsolrTei.override_params(@default_facet_params, params)
-      res = _connect(req_params)
+    def connect(params={})
+      res = _connect(params)
       # error handling or parsing of response?
     end
 
@@ -65,10 +81,46 @@ module RsolrTei
         conn = RSolr.connect :url => @url
         res = conn.get "select", :params => params
         puts "Solr Request URL: #{res.request[:uri]}"
-      rescue
-        raise "Unable to contact solr, something went wrong with the query or the url"
+      rescue => err
+        res = nil
+        puts "Unable to contact solr, bad request!"
+        puts err
       end
       return res
+    end
+
+    def _get_docs_from_response(solrRes)
+      if solrRes && solrRes["response"] && solrRes["response"]["docs"]
+        return solrRes["response"]["docs"]
+      else
+        puts "Unexpected format for solr response, unable to find documents"
+        return nil
+      end
+    end
+
+    # _process_facets
+    #   given a solr response, grabs the facet portion and processes into nicer format
+    #   params: solrRes (response from solr)
+    #   returns: nil if facets not in response, otherwise hash
+    def _process_facets(solrRes)
+      facet_hash = {}
+      if solrRes && solrRes["facet_counts"] && solrRes["facet_counts"]["facet_fields"]
+        facets = solrRes["facet_counts"]["facet_fields"]
+        facets.each do |facetfield, array|
+          facet_hash[facetfield] = {}
+          # for each faceted field, grab the even elements of the array
+          # and match them up with the following odd number
+          array.each_with_index do |item, index|
+            if index % 2 == 0
+              facet_hash[facetfield][item] = array[index+1]
+            end
+          end
+        end
+      else
+        puts "Unexpected format for solr response, unable to find facet_fields."
+        facet_hash = nil
+      end
+      return facet_hash
     end
 
   end  # end of Query class

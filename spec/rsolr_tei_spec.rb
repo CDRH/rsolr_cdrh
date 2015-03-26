@@ -1,6 +1,24 @@
 require 'rsolr_tei'
 require 'yaml'
 
+# The below suppresses output to the terminal from the
+# tests, so if you want to debug anything comment the
+# configuration out at File::NULL or redirect it to a file
+# http://stackoverflow.com/questions/15430551/suppress-console-output-during-rspec-tests
+RSpec.configure do |config|
+  original_stderr = $stderr
+  original_stdout = $stdout
+  config.before(:all) do
+    # Redirect stderr and stdout
+    $stderr = File.open(File::NULL, "w")
+    $stdout = File.open(File::NULL, "w")
+  end
+  config.after(:all) do
+    $stderr = original_stderr
+    $stdout = original_stdout
+  end
+end
+
 describe RsolrTei do
   describe '#version' do
     it 'returns version' do
@@ -34,7 +52,7 @@ describe RsolrTei::Query do
     @bad_url = "unl.edu:8080"
     @url = config["url"]
   end
-  subject { RsolrTei::Query.new(@url) }
+  subject { RsolrTei::Query.new(@url, ["title", "category"]) }
 
   describe '#initialize' do
     it "initializes with good url" do
@@ -49,6 +67,21 @@ describe RsolrTei::Query do
       rescue
         expect(true).to be_truthy
       end
+    end
+  end
+
+  describe '#get_facets' do
+    it 'returns the facet portion of a solr request' do
+      res = subject.get_facets
+      expect(res.has_key?("title")).to be_truthy
+      expect(res["title"].length > 0).to be_truthy
+    end
+  end
+
+  describe '#get_item_by_id' do
+    it 'returns a single doc' do
+      res = subject.get_item_by_id("transmissnewsodb18980613")
+      expect(res.class).to eq Hash
     end
   end
 
@@ -75,6 +108,54 @@ describe RsolrTei::Query do
     end
   end
 
+  describe '#set_default_facet_fields' do
+    it 'should overwrite the existing facet fields' do
+      expect(subject.facet_fields).to eq ["title", "category"]
+      expect(subject.set_default_facet_fields("title", "dataType")).to eq ["title", "dataType"]
+    end
+  end
+
+  describe '#connect' do
+    it 'should return a response from solr' do
+      res = subject.send(:connect, {})
+      expect(res["responseHeader"]["status"]).to eq 0
+      expect(res["response"]["docs"].class).to eq RSolr::Response::PaginatedDocSet
+    end
+  end
+
+  describe '#_connect' do
+    it 'should catch a bad request' do
+      res = subject.send(:_connect, {:q => "fake:fake"})
+      expect(res).to be_nil
+    end
+    it 'should return a good request' do
+      res = subject.send(:_connect, {:q => "*:*"})
+      expect(res["responseHeader"]["status"]).to eq 0
+      expect(res["response"]["docs"].class).to eq RSolr::Response::PaginatedDocSet
+    end
+  end
+
+  describe '#_process_facets' do
+    it 'should turn a sad array into happy little hashes' do
+      # TODO move to a fixture?
+      res = {
+        "facet_counts" => {
+          "facet_fields" => {
+            "title" => ["The Red Pony", "8", "Peter Rabbit", "2"],
+            "author" => ["Bradbury", "4", "Rowling", "3"]
+          }
+        }
+      }
+      facets = subject.send(:_process_facets, res)
+      expect(facets["title"].has_key?("Peter Rabbit")).to be_truthy
+      expect(facets["author"]["Rowling"]).to eq "3"
+    end
+    it 'should respond with nil when given a bad response' do
+      facets = subject.send(:_process_facets, {"response" => {"docs" => []}})
+      expect(facets).to be_nil
+    end
+  end
+
 
   describe '#instance variables' do
     it 'has a @url variable' do
@@ -82,7 +163,7 @@ describe RsolrTei::Query do
     end
 
     it 'has a @facet_fields variable' do
-      expect(subject.facet_fields).to eq []
+      expect(subject.facet_fields.class).to eq Array
     end
   end
 end
