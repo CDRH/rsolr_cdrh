@@ -128,6 +128,48 @@ The facets return as a hash of hashes.  That is to say, something like the follo
   }
 }
 ```
+
+### General Queries for Items
+
+This gem cuts through rsolr's search results to get right to the documents.  .query() returns an array of hashes
+```ruby
+# Looking at the first three results for a *:* query
+res = solr.query({:rows => 3, :sort => "title asc"})
+=> [
+     {
+        "id" => "281",
+        "title" => "All Creatures Great and Small",
+        "author" => "Herriot, James",
+     },
+     {
+        "id" => "723",
+        "title" => "Foundation",
+        "author" => "Asimov, Isaac"
+     },
+     {
+        "id" => "42",
+        "title" => "The Hitchhiker's Guide to the Galaxy",
+        "author" => "Adams, Douglas"
+     }
+   ]
+```
+If solr does not match any documents to your search, it will return an empty array of documents.
+If there is an error with your request to solr, it will return `nil`.
+
+You can refer to the [rsolr specs](https://github.com/rsolr/rsolr) for a complete list of parameters allows, as any parameters you give to `.query` will ultimately be passed to rsolr, but rsolr_cdrh offers a few sugary parameters to make things like escaping spaces easier on the user.
+```ruby
+# List of custom rsolr_cdrh parameters
+:qfield  # the field being queried
+:qtext   # the search term
+# You may use :q => field:text if you wish to avoid using qfield and qtext
+
+:fqfield # a filter query field
+:fqtext  # a field query term
+# You may use :fq => [field:text] if you wish to avoid using fqfield and fqtext 
+
+:page    # uses the rows parameter to determine which solr result to start on
+```
+
 ### The Convenience of Pages
 If you're displaying these results in a webpage, chances are you are going to want to offer pagination to your users.  Using either the default number of rows or a number that you specify, just pass in a page (index starts from 1) and rsolr_cdrh does the work for you.
 ```ruby
