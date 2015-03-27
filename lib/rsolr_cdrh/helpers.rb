@@ -1,6 +1,6 @@
 require 'uri'
 
-module RsolrTei
+module RSolrCdrh
 
   # TODO should require rack as well?  Or find a new
   # way of escaping html?

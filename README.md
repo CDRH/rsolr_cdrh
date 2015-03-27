@@ -1,17 +1,14 @@
-# RsolrTei
+# RSolrCdrh
 
-The Center for Digital Research in the Humanities 
-uses a standard TEI (Text Encoding Initiative) Solr schema.
-This gem is for avoiding repeating logic when
-querying solr from CDRH Sinatra / Rails sites.
+The Center for Digital Research in the Humanities uses a standard TEI (Text Encoding Initiative) Solr schema. This gem is for avoiding repeating logic when querying solr from CDRH sites.  Includes methods like "get_item_by_id", a facet response processor, and default query settings. Methods in this gem should be widely applicable for those who wish to adopt it.
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rsolr_tei', :git => 'git://github.com/CDRH/rsolr_tei.git'
-# once it is part of rubygems it will be gem 'rsolr_tei'
+gem 'rsolr_cdrh', :git => 'git://github.com/CDRH/rsolr_cdrh.git'
+# once it is part of rubygems it will be gem 'rsolr_cdrh'
 ```
 
 And then execute:
@@ -20,16 +17,16 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install rsolr_tei
+    $ gem install rsolr_cdrh
 
 ## Usage
 
 ### Quick Start
 Require the gem at the top of your file and create a new instance with the url to your solr core and, optionally, any fields you wish to set as default facets.
 ```ruby
-require 'rsolr_tei'
+require 'rsolr_cdrh'
 url = "http://thing.unl.edu:port/path_to_core
-solr = RsolrTei::Query.new(url, ["title", "category", "author"])
+solr = RSolrCdrh::Query.new(url, ["title", "category", "author"])
 ```
 Run your first request to return all objects!
 ```ruby
@@ -53,7 +50,7 @@ document = solr.get_item_by_id("27183")
 ```
 
 ### Defaults and Customization
-Let's step back for just a second and talk about some defaults.  When you initialize a new Rsolr_Tei::Query object, it comes with some assumptions.  For faceting, it uses the following settings:
+Let's step back for just a second and talk about some defaults.  When you initialize a new RSolrCdrh::Query object, it comes with some assumptions.  For faceting, it uses the following settings:
 ```ruby
 # Facet Defaults
 {
@@ -97,7 +94,7 @@ solr.query({:qfield => "language", :qtext => "Ruby", :start => 50})
 ### Faceting
 When you first create a new instance of the Query class, you are only required to hand over the URL, but you can also set some fields for faceting!
 ```ruby
-solr = RsolrTei::Query.new(url, ["title", "category", "author"])
+solr = RSolrCdrh::Query.new(url, ["title", "category", "author"])
 ```
 If you want to reset the default facet fields, you can do one of the following things:
 ```ruby
@@ -110,9 +107,11 @@ However, if you are pretty happy with how the default facets work and simply wan
 # runs with default fields and default parameters (like sort, rows, etc)
 solr.get_facets
 # runs with custom fields
-solr.get_facets(["title", "year"])
+solr.get_facets(nil, ["title", "year"])
 # runs with custom fields and some specific parameters
-solr.get_facets(["title", "year"], {:rows => 10, :sort => "year asc"})
+solr.get_facets({:rows => 10, :sort => "year asc"}, ["title", "year"])
+# some parameters but just the default fields
+solr.get_facets({:sort => "author desc"})
 ```
 
 The facets return as a hash of hashes.  That is to say, something like the following:
@@ -130,7 +129,7 @@ The facets return as a hash of hashes.  That is to say, something like the follo
 }
 ```
 ### The Convenience of Pages
-If you're displaying these results in a webpage, chances are you are going to want to offer pagination to your users.  Using either the default number of rows or a number that you specify, just pass in a page (index starts from 1) and rsolr_tei does the work for you.
+If you're displaying these results in a webpage, chances are you are going to want to offer pagination to your users.  Using either the default number of rows or a number that you specify, just pass in a page (index starts from 1) and rsolr_cdrh does the work for you.
 ```ruby
 page_1 = solr.query({:qfield => "category", :qtext => "essays"})
  => # returns results 0 - 49 (unless the default of 50 was changed before this step)
@@ -155,7 +154,7 @@ bundle exec rake spec
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/rsolr_tei/fork )
+1. Fork it ( https://github.com/CDRH/rsolr_cdrh/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Write tests for your new features
 4. Commit your changes (`git commit -am 'Add some feature'`)

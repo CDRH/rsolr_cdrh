@@ -1,18 +1,21 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'rsolr_tei/version'
+require 'rsolr_cdrh/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "rsolr_tei"
-  spec.version       = RsolrTei::VERSION
-  spec.authors       = ["Jessica Dussault"]
+  spec.name          = "rsolr_cdrh"
+  spec.version       = RSolrCdrh::VERSION
+  spec.authors       = ["Jessica Dussault (jduss4)"]
   spec.email         = ["jdussault@unl.edu"]
-  spec.summary       = %q{Provides a wrapper for rsolr specific to querying a standard TEI API}
+  spec.summary       = %q{Wrapper for solr to cut down on repetition between similar projects}
   spec.description   = %q{The Center for Digital Research in the Humanities 
                           uses a standard TEI (Text Encoding Initiative) Solr schema.
-                          This gem is for avoiding repeating logic when
-                          querying solr from CDRH Sinatra sites.}
+                          This gem is for avoiding repeating logic when querying solr 
+                          from CDRH sites.  Includes methods like "get_item_by_id", a
+                          facet response processor, and default query settings.
+                          Methods in this gem should be widely applicable
+                          for those who wish to adopt it. }
   spec.homepage      = ""
   spec.license       = "MIT"
 

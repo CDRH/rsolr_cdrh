@@ -1,4 +1,4 @@
-require 'rsolr_tei'
+require 'rsolr_cdrh'
 require 'yaml'
 
 # The below suppresses output to the terminal from the
@@ -19,17 +19,17 @@ RSpec.configure do |config|
   end
 end
 
-describe RsolrTei do
+describe RSolrCdrh do
   describe '#version' do
     it 'returns version' do
-      expect(RsolrTei.version).to eq '0.0.1'
+      expect(RSolrCdrh.version).to eq '0.0.1'
     end
   end
 
   describe '#escape' do
     it 'fills in whitespace' do
       text = "category:\"The Ballad of Bilbo Baggins\""
-      escaped = RsolrTei.escape(text)
+      escaped = RSolrCdrh.escape(text)
       expect(escaped).to eq "category:\"The%20Ballad%20of%20Bilbo%20Baggins\""
     end
   end
@@ -37,7 +37,7 @@ describe RsolrTei do
   describe '#hash_to_s' do
     it 'should turn hash with string keys into symbols' do
       hash = {"a" => 1, "b" => 2, :c => "3"}
-      new_hash = RsolrTei.hash_to_s(hash)
+      new_hash = RSolrCdrh.hash_to_s(hash)
       expect(new_hash.length).to eq 3
       expect(new_hash[:a]).to eq 1
       expect(new_hash[:c]).to eq "3"
@@ -46,7 +46,7 @@ describe RsolrTei do
     # but it is at least expected / recognized
     it 'overwrites same named string vs symbols' do
       hash = {"a" => "old", :a => "new", "b" => "bee"}
-      new_hash = RsolrTei.hash_to_s(hash)
+      new_hash = RSolrCdrh.hash_to_s(hash)
       expect(new_hash.length).to eq 2
       expect(new_hash[:a]).to eq "new"
       expect(new_hash[:b]).to eq "bee"
@@ -55,7 +55,7 @@ describe RsolrTei do
 
   describe '#is_url?' do
     it 'returns false for bad url' do
-      expect(RsolrTei.is_url?("nota.url")).to be_falsey
+      expect(RSolrCdrh.is_url?("nota.url")).to be_falsey
     end
   end
 
@@ -64,7 +64,7 @@ describe RsolrTei do
       one = {:a => "bad", :b => "good", :c => "bad"}
       two = {:a => "good", :c => "good", :d => "good"}
       # use send to get at the private method
-      new_hash = RsolrTei.override_params(one, two)
+      new_hash = RSolrCdrh.override_params(one, two)
       expect(new_hash.length).to eq 4
       expect(new_hash[:a]).to eq "good"
       expect(new_hash[:c]).to eq "good"
@@ -74,23 +74,23 @@ describe RsolrTei do
 end
 
 
-describe RsolrTei::Query do
+describe RSolrCdrh::Query do
   before(:each) do
     config = YAML.load_file("#{File.dirname(__FILE__)}/config.yml")
     @bad_url = "unl.edu:8080"
     @url = config["url"]
   end
-  subject { RsolrTei::Query.new(@url, ["title", "category"]) }
+  subject { RSolrCdrh::Query.new(@url, ["title", "category"]) }
 
   describe '#initialize' do
     it "initializes with good url" do
-      tei = RsolrTei::Query.new(@url)
-      expect(tei.class).to eq RsolrTei::Query
+      tei = RSolrCdrh::Query.new(@url)
+      expect(tei.class).to eq RSolrCdrh::Query
     end
 
     it "throws exception with bad url" do
       begin
-        RsolrTei::Query.new(@bad_url)
+        RSolrCdrh::Query.new(@bad_url)
         expect(false).to be_truthy
       rescue
         expect(true).to be_truthy
@@ -104,6 +104,7 @@ describe RsolrTei::Query do
       expect(res.has_key?("title")).to be_truthy
       expect(res["title"].length > 0).to be_truthy
     end
+    # TODO add some tests with the params and fields overridden
   end
 
   describe '#get_item_by_id' do
@@ -152,6 +153,10 @@ describe RsolrTei::Query do
       res = subject.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
       expect(res.length).to eq 29
     end
+    it 'retrieves query with spaces when using q params' do
+      res = subject.query({:q => "source:\"Omaha Daily Bee\""})
+      expect(res.length).to eq 29
+    end
     it 'retrieves all newspapers created by Ethel Evans' do
       params = {
         :qfield => "subCategory",
@@ -161,6 +166,14 @@ describe RsolrTei::Query do
       }
       res = subject.query(params)
       expect(res.length).to eq 13
+    end
+    it 'can use the defaults if given no parameters' do
+      res = subject.query
+      expect(res.length).to eq 50
+    end
+    it 'can use the original q parameter rather than the qfield and qtext symbols' do
+      res = subject.query(:q => "category:texts")
+      expect(res.length).to eq 50
     end
   end
 
