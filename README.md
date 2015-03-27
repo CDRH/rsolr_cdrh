@@ -10,7 +10,8 @@ querying solr from CDRH Sinatra / Rails sites.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rsolr_tei'
+gem 'rsolr_tei', :git => 'git://github.com/CDRH/rsolr_tei.git'
+# once it is part of rubygems it will be gem 'rsolr_tei'
 ```
 
 And then execute:
@@ -23,10 +24,131 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Quick Start
+Require the gem at the top of your file and create a new instance with the url to your solr core and, optionally, any fields you wish to set as default facets.
+```ruby
+require 'rsolr_tei'
+url = "http://thing.unl.edu:port/path_to_core
+solr = RsolrTei::Query.new(url, ["title", "category", "author"])
+```
+Run your first request to return all objects!
+```ruby
+res = solr.query
+puts res.class
+ => RSolr::Response::PaginatedDocSet
+puts res[0]
+ => # hash containing results for a single document
+```
+Want to make a specific request, perhaps all of the documents from one paper?  In the below example, you can think of `qfield` and `qtext` as being the left and right sides of q => `qfield`:`qtext` in a traditional solr query.
+```ruby
+res = solr.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
+```
+You got all of the Omaha Daily Bee results but you'd really like to narrow it down to just ten results.
+```ruby
+res = solr.query({:qfield => "source", :qtext => "Omaha Daily Bee", :rows => 10})
+```
+If you want to get something by a specific id you could, of course, search for `:q => "id:#{your_id}"` but who wants to do that when you can do this?
+```ruby
+document = solr.get_item_by_id("27183")
+```
+
+### Defaults and Customization
+Let's step back for just a second and talk about some defaults.  When you initialize a new Rsolr_Tei::Query object, it comes with some assumptions.  For faceting, it uses the following settings:
+```ruby
+# Facet Defaults
+{
+   :q => "*:*",
+   :start => 0,
+   :rows => 0,
+   :facet => "true",
+   'facet.field' => [],  # Fields can be set by the user when creating the object 
+   'facet.sort' => "index"
+}
+```
+General queries have a different set of defaults:
+```ruby
+# Query Defaults
+{
+   :q => "*:*",
+   :fq => [],
+   :start => 0,
+   :rows => 50,
+   :sort => "title asc"
+}
+```
+You can override any of these for all the requests that you might be making or on a per request basis.  You will not "add" or "change" defaults, you will be completely resetting them, so take care that you add as many keys for a request as you will need!
+```ruby
+# Resetting defaults for all requests
+solr.set_default_query_params({
+  :sort => "date desc", 
+  :rows => 25,
+  :start => 0,
+  :q => "*:*"
+  })
+
+# You can also interact directly with the instance variables, if you prefer
+solr.facet_fields = ["title", "date", "category", "publisher"]
+
+# Uses default values except those specified by user for this request
+solr.query({:q => "language:Ruby", :start => 50})
+# That would be the same as this request:
+solr.query({:qfield => "language", :qtext => "Ruby", :start => 50})
+```
+### Faceting
+When you first create a new instance of the Query class, you are only required to hand over the URL, but you can also set some fields for faceting!
+```ruby
+solr = RsolrTei::Query.new(url, ["title", "category", "author"])
+```
+If you want to reset the default facet fields, you can do one of the following things:
+```ruby
+solr.set_default_facet_fields("title", "dataType", "repository")
+# Using the instance variable
+solr.facet_fields = ["title", "dataType", "repository")
+```
+However, if you are pretty happy with how the default facets work and simply want to run one bizarre request for your own gratification, you can easily do that!
+```ruby
+# runs with default fields and default parameters (like sort, rows, etc)
+solr.get_facets
+# runs with custom fields
+solr.get_facets(["title", "year"])
+# runs with custom fields and some specific parameters
+solr.get_facets(["title", "year"], {:rows => 10, :sort => "year asc"})
+```
+
+The facets return as a hash of hashes.  That is to say, something like the following:
+```ruby
+{
+  "author" => {
+    "Herriot, James" => 10,
+    "Tolkien, J.R.R." => 8
+  },
+  "repository" => {
+    "British Museum" => 1003,
+    "Willa Cather Archive" => 800,
+    "London Docklands Museum" => 78
+  }
+}
+```
+### The Convenience of Pages
+If you're displaying these results in a webpage, chances are you are going to want to offer pagination to your users.  Using either the default number of rows or a number that you specify, just pass in a page (index starts from 1) and rsolr_tei does the work for you.
+```ruby
+page_1 = solr.query({:qfield => "category", :qtext => "essays"})
+ => # returns results 0 - 49 (unless the default of 50 was changed before this step)
+page_2 = solr.query({:qfield => "category", :qtext => "essays", :page => 2})
+ => # returns results 50 - 99
+
+# Override the rows to get a smaller set of documents
+page_1 = solr.query({:rows => 10, :page => 1})
+page_2 = solr.query({:rows => 10, :page => 2})
+
+# If you prefer to "DIY":
+page_2 = solr.query({:qfield => "category", :qtext => "essays", :start => 50})
+```
+
+See the wiki pages for more documentation!
 
 ## Run Tests
-If you have forked this gem, then you can run the following command to kick off the tests.
+If you have forked this gem, then you can run the following command to kick off the tests.  Many of them will fail if you do not have the exact same solr index hooked up as the CDRH.  In the future there may be an indexing script that will be run to populate an empty core that the tests can be pointed towards, but in the meantime, my deepest apologies.
 ```
 bundle exec rake spec
 ```
@@ -35,6 +157,7 @@ bundle exec rake spec
 
 1. Fork it ( https://github.com/[my-github-username]/rsolr_tei/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+3. Write tests for your new features
+4. Commit your changes (`git commit -am 'Add some feature'`)
+5. Push to the branch (`git push origin my-new-feature`)
+6. Create a new Pull Request
