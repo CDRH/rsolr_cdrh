@@ -147,15 +147,17 @@ describe RSolrCdrh::Query do
   describe '#query' do
     it 'retrieves the second 10 text objects' do
       res = subject.query({:qfield => "category", :qtext => "texts", :page => 2, :rows => 10})
-      expect(res.length).to eq 10
+      expect(res[:docs].length).to eq 10
+      expect(res[:url].class).to eq URI::HTTP
+      expect(res[:num_found] > 10).to be_truthy
     end
     it 'retrieves query that has spaces in term' do
       res = subject.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
-      expect(res.length).to eq 29
+      expect(res[:docs].length).to eq 29
     end
     it 'retrieves query with spaces when using q params' do
       res = subject.query({:q => "source:\"Omaha Daily Bee\""})
-      expect(res.length).to eq 29
+      expect(res[:docs].length).to eq 29
     end
     it 'retrieves all newspapers created by Ethel Evans' do
       params = {
@@ -165,15 +167,17 @@ describe RSolrCdrh::Query do
         :fqtext => "Ethel Evans"
       }
       res = subject.query(params)
-      expect(res.length).to eq 13
+      expect(res[:docs].length).to eq 13
     end
     it 'can use the defaults if given no parameters' do
       res = subject.query
-      expect(res.length).to eq 50
+      expect(res[:docs].length).to eq 50
     end
     it 'can use the original q parameter rather than the qfield and qtext symbols' do
       res = subject.query(:q => "category:texts")
-      expect(res.length).to eq 50
+      expect(res[:docs].length).to eq 50
+      expect(res[:url].class).to eq URI::HTTP
+      expect(res[:num_found] > 50).to be_truthy
     end
   end
 

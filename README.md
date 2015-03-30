@@ -31,10 +31,10 @@ solr = RSolrCdrh::Query.new(url, ["title", "category", "author"])
 Run your first request to return all objects!
 ```ruby
 res = solr.query
-puts res.class
+puts res[:docs].class
  => RSolr::Response::PaginatedDocSet
-puts res[0]
- => # hash containing results for a single document
+puts res[:num_found]
+ => 83
 ```
 Want to make a specific request, perhaps all of the documents from one paper?  In the below example, you can think of `qfield` and `qtext` as being the left and right sides of q => `qfield`:`qtext` in a traditional solr query.
 ```ruby
@@ -131,27 +131,34 @@ The facets return as a hash of hashes.  That is to say, something like the follo
 
 ### General Queries for Items
 
-This gem cuts through rsolr's search results to get right to the documents.  .query() returns an array of hashes
+This gem cuts through rsolr's search results to get right to some of the most important information
+.query() returns a hash with :url, :num_found (total number found), and :docs (an array of hashes)
+
 ```ruby
 # Looking at the first three results for a *:* query
 res = solr.query({:rows => 3, :sort => "title asc"})
-=> [
-     {
-        "id" => "281",
-        "title" => "All Creatures Great and Small",
-        "author" => "Herriot, James",
-     },
-     {
-        "id" => "723",
-        "title" => "Foundation",
-        "author" => "Asimov, Isaac"
-     },
-     {
-        "id" => "42",
-        "title" => "The Hitchhiker's Guide to the Galaxy",
-        "author" => "Adams, Douglas"
-     }
-   ]
+=>  {
+      :num_found => "721"  # total number in solr
+      :url => "http://solr.request.com?q=*:*..."  # raw solr url
+      :docs =>
+      [
+        {
+          "id" => "281",
+          "title" => "All Creatures Great and Small",
+          "author" => "Herriot, James",
+        },
+        {
+          "id" => "723",
+          "title" => "Foundation",
+          "author" => "Asimov, Isaac"
+        },
+        {
+          "id" => "42",
+          "title" => "The Hitchhiker's Guide to the Galaxy",
+          "author" => "Adams, Douglas"
+        }
+      ]
+    }
 ```
 If solr does not match any documents to your search, it will return an empty array of documents.
 If there is an error with your request to solr, it will return `nil`.
