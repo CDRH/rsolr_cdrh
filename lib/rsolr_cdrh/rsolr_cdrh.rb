@@ -49,7 +49,6 @@ module RSolrCdrh
       # override defaults with requested params
       req_params = RSolrCdrh.override_params(@default_facet_params, params)
       res = _connect(req_params)
-      puts "The request params are #{req_params}"
       return _process_facets(res)
     end
 
