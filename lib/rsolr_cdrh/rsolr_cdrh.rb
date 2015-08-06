@@ -42,15 +42,19 @@ module RSolrCdrh
     #   Sends a request to solr to return facet information for given fields
     #   Params: params (to narrow / sort facets), fields (to be faceted)
     #   Returns: hash of hash ({"author" => {"Tolkien" => 12, "Asimov" => 8}})
-    def get_facets(params=nil, fields=@facet_fields)
-      params ||= @default_facet_params # if nil or not passed in use default params
+    def get_facets(params={}, fields=@facet_fields)
+      # add facet specific requirements
       params["facet.field"] = fields
-      raw = connect(params)
-      return _process_facets(raw)
+      params = _prepare_params(params)
+      # override defaults with requested params
+      req_params = RSolrCdrh.override_params(@default_facet_params, params)
+      res = _connect(req_params)
+      puts "The request params are #{req_params}"
+      return _process_facets(res)
     end
 
     def get_item_by_id(id)
-      res = connect({:q => "id:#{id}", :rows => "1"})
+      res = _connect({:q => "id:#{id}", :rows => "1"})
       docs = _get_docs_from_response(res)
       doc = docs.nil? ? nil : docs[0]
       return doc
@@ -70,28 +74,17 @@ module RSolrCdrh
     end
 
     def query(params={})
-      # to symbols
-      RSolrCdrh.hash_to_s(params)
-      # remove page and replace with start
-      _calc_start(params)
-      # check for q fields / fq fields and combine to make new ones
-      _create_query(params)
+      params = _prepare_params(params)
       # override defaults with requested params
       req_params = RSolrCdrh.override_params(@default_query_params, params)
       # send request
-      res = connect(req_params)
+      res = _connect(req_params)
       # return only the docs
       return _format_response(res)
     end
 
 
     private
-
-    # TODO if no extra functionality required then replace with _connect
-    def connect(params={})
-      res = _connect(params)
-      # error handling or parsing of response?
-    end
 
     def _calc_start(params)
       # if start is specified by user then don't override with page
@@ -124,20 +117,31 @@ module RSolrCdrh
       # TODO will there need to be more escaping over this point?
       # TODO should we override :q?
       if params.has_key?(:qfield) && params.has_key?(:qtext)
-        # qfield = RSolrCdrh.escape(params[:qfield])
-        # qtext = RSolrCdrh.escape(params[:qtext])
-        params[:q] = "#{params[:qfield]}:\"#{params[:qtext]}\""
+        # TODO THIS IS THE WORST AND IT'S ALL SOLR'S FAULT
+        #   Text fields can't have quotation marks (or it looks for exact)
+        #   And string fields must have quotation marks
+        #   Since CDRH only uses 'text' as the text field hardcoding temporarily
+        if params[:qfield] == "text"
+          params[:q] = "#{params[:qfield]}:(#{params[:qtext]})"
+        else
+          params[:q] = "#{params[:qfield]}:\"#{params[:qtext]}\""
+        end
       end
 
+      # TODO should be able to support multiple fqs
       if params.has_key?(:fqfield) && params.has_key?(:fqtext)
-        # fqfield = RSolrCdrh.escape(params[:fqfield])
-        # fqtext = RSolrCdrh.escape(params[:qtext])
-        params[:fq] = ["#{params[:fqfield]}:\"#{params[:fqtext]}\""]
+        # TODO this is still the worst, see line 125 for explanation
+        if params[:fqfield] == "text"
+          params[:fq] = ["#{params[:fqfield]}:(#{params[:fqtext]})"]
+        else
+          params[:fq] = ["#{params[:fqfield]}:\"#{params[:fqtext]}\""]
+        end
       end
       params.delete(:qfield)
       params.delete(:qtext)
       params.delete(:fqfield)
       params.delete(:fqtext)
+      params.delete("q")
       return params
     end
 
@@ -167,6 +171,18 @@ module RSolrCdrh
       if solrRes && solrRes["response"] && solrRes["response"]["numFound"]
         return solrRes["response"]["numFound"]
       end
+    end
+
+    def _prepare_params(params)
+      # to symbols
+      params = RSolrCdrh.hash_to_s(params)
+      # remove page and replace with start
+      params = _calc_start(params)
+      # add escapes for special characters
+      params = RSolrCdrh.escape_values(params)
+      # check for q fields / fq fields and combine to make new ones
+      params = _create_query(params)
+      return params
     end
 
     # _process_facets

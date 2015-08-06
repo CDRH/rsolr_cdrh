@@ -26,11 +26,11 @@ describe RSolrCdrh do
     end
   end
 
-  describe '#escape' do
-    it 'fills in whitespace' do
-      text = "category:\"The Ballad of Bilbo Baggins\""
-      escaped = RSolrCdrh.escape(text)
-      expect(escaped).to eq "category:\"The%20Ballad%20of%20Bilbo%20Baggins\""
+  describe '#escape_values' do
+    it 'correctly escapes something with quotation marks' do
+      hash = {:title => '"Yellowstone Kelly": Annoying Name', :q => "*:*"}
+      escaped = RSolrCdrh.escape_values(hash)
+      expect(escaped[:title]).to eq '"Yellowstone Kelly": Annoying Name'
     end
   end
 
@@ -153,11 +153,12 @@ describe RSolrCdrh::Query do
     end
     it 'retrieves query that has spaces in term' do
       res = subject.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
-      expect(res[:docs].length).to eq 29
+      puts "res is #{res.inspect}"
+      expect(res[:docs].length).to eq 30
     end
     it 'retrieves query with spaces when using q params' do
       res = subject.query({:q => "source:\"Omaha Daily Bee\""})
-      expect(res[:docs].length).to eq 29
+      expect(res[:docs].length).to eq 30
     end
     it 'retrieves all newspapers created by Ethel Evans' do
       params = {
@@ -181,14 +182,6 @@ describe RSolrCdrh::Query do
     end
   end
 
-  describe '#connect' do
-    it 'should return a response from solr' do
-      res = subject.send(:connect, {})
-      expect(res["responseHeader"]["status"]).to eq 0
-      expect(res["response"]["docs"].class).to eq RSolr::Response::PaginatedDocSet
-    end
-  end
-
   describe '#_connect' do
     it 'should catch a bad request' do
       res = subject.send(:_connect, {:q => "fake:fake"})
@@ -198,6 +191,19 @@ describe RSolrCdrh::Query do
       res = subject.send(:_connect, {:q => "*:*"})
       expect(res["responseHeader"]["status"]).to eq 0
       expect(res["response"]["docs"].class).to eq RSolr::Response::PaginatedDocSet
+    end
+  end
+
+  describe '#_create_query' do
+    it 'should create a q from two specified other fields' do
+      params = {:qfield => "text", 
+                :qtext => "Willa Cather",
+                "q" => "*:*"}
+      res = subject.send(:_create_query, params)
+      expect(res[:q].nil?).to be_falsey
+      expect(res["q"].nil?).to be_truthy
+      expect(res[:qfield].nil?).to be_truthy
+      expect(res[:qtext].nil?).to be_truthy
     end
   end
 
