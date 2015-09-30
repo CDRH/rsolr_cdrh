@@ -22,7 +22,9 @@ module RSolrCdrh
         :fq => [],
         :start => 0,
         :rows => 50,
-        :sort => "title asc"
+        :sort => "title asc",
+        :hl => "true",
+        "hl.fragsize" => 50000
       }
 
     def initialize(url, facets=[])
@@ -79,7 +81,7 @@ module RSolrCdrh
       # send request
       res = _connect(req_params)
       # return only the docs
-      return _format_response(res)
+      return _format_response(res, req_params[:rows])
     end
 
 
@@ -144,13 +146,15 @@ module RSolrCdrh
       return params
     end
 
+    # rows refers to the number of results requested (default 50)
     # return res = {:num_found => 10, :url => "request url", :docs => []}
-    def _format_response(res)
+    def _format_response(res, rows)
       response = {}
       if res.nil?
         return nil
       else
         response[:num_found] = _get_number_from_response(res)
+        response[:pages] = (response[:num_found].to_f/rows).ceil
         response[:docs] = _get_docs_from_response(res)
         response[:url] = res.request[:uri]
         return response
@@ -159,9 +163,23 @@ module RSolrCdrh
 
     def _get_docs_from_response(solrRes)
       if solrRes && solrRes["response"] && solrRes["response"]["docs"]
-        return solrRes["response"]["docs"]
+        docs = solrRes["response"]["docs"]
+        if docs
+          docs.each do |doc|
+            doc["highlight"] = _get_highlight_for_id(solrRes, doc["id"])
+          end
+        end
+        return docs
       else
         puts "Unexpected format for solr response, unable to find documents"
+        return nil
+      end
+    end
+
+    def _get_highlight_for_id(solrRes, id)
+      begin
+        return solrRes["highlighting"][id]['text'][0]
+      rescue
         return nil
       end
     end

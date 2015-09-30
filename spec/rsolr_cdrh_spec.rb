@@ -22,7 +22,7 @@ end
 describe RSolrCdrh do
   describe '#version' do
     it 'returns version' do
-      expect(RSolrCdrh.version).to eq '0.0.1'
+      expect(RSolrCdrh.version).to eq '0.1.0'
     end
   end
 
@@ -109,7 +109,7 @@ describe RSolrCdrh::Query do
 
   describe '#get_item_by_id' do
     it 'returns a single doc' do
-      res = subject.get_item_by_id("transmissnewsodb18980613")
+      res = subject.get_item_by_id("transmiss.news.odb.18980706a")
       expect(res.class).to eq Hash
     end
   end
@@ -150,25 +150,27 @@ describe RSolrCdrh::Query do
       expect(res[:docs].length).to eq 10
       expect(res[:url].class).to eq URI::HTTP
       expect(res[:num_found] > 10).to be_truthy
+      expect(res[:pages] == 6).to be_truthy
+      expect(res[:docs][0].has_key?("highlight")).to be_truthy
     end
     it 'retrieves query that has spaces in term' do
-      res = subject.query({:qfield => "source", :qtext => "Omaha Daily Bee"})
+      res = subject.query({:qfield => "source", :qtext => "Omaha World-Herald"})
       puts "res is #{res.inspect}"
-      expect(res[:docs].length).to eq 30
+      expect(res[:docs].length).to eq 5
     end
     it 'retrieves query with spaces when using q params' do
-      res = subject.query({:q => "source:\"Omaha Daily Bee\""})
-      expect(res[:docs].length).to eq 30
+      res = subject.query({:q => "source:\"Omaha World-Herald\""})
+      expect(res[:docs].length).to eq 5
     end
-    it 'retrieves all newspapers created by Ethel Evans' do
+    it 'retrieves all newspapers created by Ella B. Perrine' do
       params = {
         :qfield => "subCategory",
         :qtext => "newspapers",
         :fqfield => "creator",
-        :fqtext => "Ethel Evans"
+        :fqtext => "Ella B. Perrine"
       }
       res = subject.query(params)
-      expect(res[:docs].length).to eq 13
+      expect(res[:docs].length).to eq 1
     end
     it 'can use the defaults if given no parameters' do
       res = subject.query
