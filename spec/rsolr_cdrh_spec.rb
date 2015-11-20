@@ -109,7 +109,7 @@ describe RSolrCdrh::Query do
 
   describe '#get_item_by_id' do
     it 'returns a single doc' do
-      res = subject.get_item_by_id("transmiss.news.odb.18980706a")
+      res = subject.get_item_by_id("TMI00001")
       expect(res.class).to eq Hash
     end
   end
@@ -146,11 +146,11 @@ describe RSolrCdrh::Query do
 
   describe '#query' do
     it 'retrieves the second 10 text objects' do
-      res = subject.query({:qfield => "category", :qtext => "texts", :page => 2, :rows => 10})
+      res = subject.query({:qfield => "category", :qtext => "photographs", :page => 2, :rows => 10})
       expect(res[:docs].length).to eq 10
       expect(res[:url].class).to eq URI::HTTP
       expect(res[:num_found] > 10).to be_truthy
-      expect(res[:pages] == 6).to be_truthy
+      expect(res[:pages] == 189).to be_truthy
       expect(res[:docs][0].has_key?("highlights")).to be_truthy
     end
     it 'retrieves query that has spaces in term' do
@@ -162,7 +162,7 @@ describe RSolrCdrh::Query do
       res = subject.query({:q => "source:\"Omaha World-Herald\""})
       expect(res[:docs].length).to eq 5
     end
-    it 'retrieves all newspapers created by Ella B. Perrine' do
+    it 'retrieves all newspapers created by Ella B. Perrine (there are none, should not be nil)' do
       params = {
         :qfield => "subCategory",
         :qtext => "newspapers",
@@ -170,7 +170,17 @@ describe RSolrCdrh::Query do
         :fqtext => "Ella B. Perrine"
       }
       res = subject.query(params)
-      expect(res[:docs].length).to eq 1
+      expect(res[:docs].length).to eq 0
+    end
+    it 'retrieves all newspapers created by Michael Kelly' do
+      params = {
+        :qfield => "subCategory",
+        :qtext => "newspapers",
+        :fqfield => "creator",
+        :fqtext => "Michael Kelly"
+      }
+      res = subject.query(params)
+      expect(res[:docs].length).to eq 2
     end
     it 'can use the defaults if given no parameters' do
       res = subject.query
@@ -178,9 +188,9 @@ describe RSolrCdrh::Query do
     end
     it 'can use the original q parameter rather than the qfield and qtext symbols' do
       res = subject.query(:q => "category:texts")
-      expect(res[:docs].length).to eq 50
+      expect(res[:docs].length).to eq 12
       expect(res[:url].class).to eq URI::HTTP
-      expect(res[:num_found] > 50).to be_truthy
+      expect(res[:num_found] == 12).to be_truthy
     end
   end
 

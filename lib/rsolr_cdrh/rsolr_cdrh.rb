@@ -45,11 +45,12 @@ module RSolrCdrh
     #   Params: params (to narrow / sort facets), fields (to be faceted)
     #   Returns: hash of hash ({"author" => {"Tolkien" => 12, "Asimov" => 8}})
     def get_facets(params={}, fields=@facet_fields)
+      options = params.clone
       # add facet specific requirements
-      params["facet.field"] = fields
-      params = _prepare_params(params)
+      options["facet.field"] = fields
+      options = _prepare_params(options)
       # override defaults with requested params
-      req_params = RSolrCdrh.override_params(@default_facet_params, params)
+      req_params = RSolrCdrh.override_params(@default_facet_params, options)
       res = _connect(req_params)
       return _process_facets(res)
     end
@@ -75,9 +76,10 @@ module RSolrCdrh
     end
 
     def query(params={})
-      params = _prepare_params(params)
+      options = params.clone
+      options = _prepare_params(options)
       # override defaults with requested params
-      req_params = RSolrCdrh.override_params(@default_query_params, params)
+      req_params = RSolrCdrh.override_params(@default_query_params, options)
       # send request
       res = _connect(req_params)
       # return only the docs

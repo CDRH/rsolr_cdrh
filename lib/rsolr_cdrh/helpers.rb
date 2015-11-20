@@ -3,12 +3,13 @@ require 'uri'
 module RSolrCdrh
 
   def self.escape_values(params)
-    params.each do |key, value|
+    options = params.clone
+    options.each do |key, value|
       if value.class == String
-        RSolr.solr_escape(params[key])
+        RSolr.solr_escape(options[key])
       end
     end
-    return params
+    return options
   end
 
   def self.get_start(page, rows)
@@ -16,7 +17,8 @@ module RSolrCdrh
   end
 
   def self.hash_to_s(params)
-    symbol_params = Hash[params.map do |k, v|
+    options = params.clone
+    symbol_params = Hash[options.map do |k, v|
           [k.to_sym, v]
         end
       ]
