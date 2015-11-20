@@ -24,7 +24,9 @@ module RSolrCdrh
         :rows => 50,
         :sort => "title asc",
         :hl => "true",
-        "hl.fragsize" => 50000
+        "hl.fragsize" => "200",
+        "hl.snippets" => "3",
+        "hl.fl" => "text"
       }
 
     def initialize(url, facets=[])
