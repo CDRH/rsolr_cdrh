@@ -22,7 +22,7 @@ end
 describe RSolrCdrh do
   describe '#version' do
     it 'returns version' do
-      expect(RSolrCdrh.version).to eq '0.1.0'
+      expect(RSolrCdrh.version).to eq '1.0.0'
     end
   end
 
@@ -151,7 +151,7 @@ describe RSolrCdrh::Query do
       expect(res[:url].class).to eq URI::HTTP
       expect(res[:num_found] > 10).to be_truthy
       expect(res[:pages] == 6).to be_truthy
-      expect(res[:docs][0].has_key?("highlight")).to be_truthy
+      expect(res[:docs][0].has_key?("highlights")).to be_truthy
     end
     it 'retrieves query that has spaces in term' do
       res = subject.query({:qfield => "source", :qtext => "Omaha World-Herald"})

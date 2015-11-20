@@ -166,7 +166,7 @@ module RSolrCdrh
         docs = solrRes["response"]["docs"]
         if docs
           docs.each do |doc|
-            doc["highlight"] = _get_highlight_for_id(solrRes, doc["id"])
+            doc["highlights"] = _get_highlights_for_id(solrRes, doc["id"])
           end
         end
         return docs
@@ -176,10 +176,10 @@ module RSolrCdrh
       end
     end
 
-    def _get_highlight_for_id(solrRes, id)
+    def _get_highlights_for_id(solrRes, id)
       begin
-        return solrRes["highlighting"][id]['text'][0]
-      rescue
+        return solrRes["highlighting"][id]['text']
+      rescue Exception => e
         return nil
       end
     end
