@@ -109,11 +109,10 @@ module RSolrCdrh
       begin
         conn = RSolr.connect :url => @url
         res = conn.get "select", :params => params
-        puts "Solr Request URL: #{res.request[:uri]}"
+        RSolrCdrh.logger.info("Solr Request URL: #{res.request[:uri]}")
       rescue => err
+        RSolrCdrh.logger.error("Unable to contact solr, bad request! #{err}")
         res = nil
-        puts "Unable to contact solr, bad request!"
-        puts err
       end
       return res
     end
@@ -175,7 +174,7 @@ module RSolrCdrh
         end
         return docs
       else
-        puts "Unexpected format for solr response, unable to find documents"
+        RSolrCdrh.logger.error("Unexpected format for solr response, unable to find documents")
         return nil
       end
     end
@@ -183,7 +182,7 @@ module RSolrCdrh
     def _get_highlights_for_id(solrRes, id)
       begin
         return solrRes["highlighting"][id]['text']
-      rescue Exception => e
+      rescue Exception
         return nil
       end
     end
@@ -225,7 +224,7 @@ module RSolrCdrh
           end
         end
       else
-        puts "Unexpected format for solr response, unable to find facet_fields."
+        RSolrCdrh.logger.error("Unexpected format for solr response, unable to find facet_fields.")
         facet_hash = nil
       end
       return facet_hash

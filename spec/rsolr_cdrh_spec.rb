@@ -71,6 +71,24 @@ describe RSolrCdrh do
     end
   end
 
+  describe '#logger' do
+    it 'should return an instance of the ruby built in logger' do
+      expect(RSolrCdrh.logger.class).to eq Logger
+    end
+  end
+
+  describe '#set_logger' do
+    it 'should set the @@logger variable' do
+      orig = RSolrCdrh.logger
+      RSolrCdrh.set_logger("Hello")
+      modified = RSolrCdrh.logger
+      expect(orig == modified).to be_falsey
+      # set it back 
+      RSolrCdrh.set_logger(orig)
+      expect(orig == RSolrCdrh.logger).to be_truthy
+    end
+  end
+
 end
 
 
