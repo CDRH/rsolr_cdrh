@@ -182,7 +182,7 @@ module RSolrCdrh
     def _get_highlights_for_id(solrRes, id)
       begin
         return solrRes["highlighting"][id]['text']
-      rescue Exception
+      rescue => err
         return nil
       end
     end
