@@ -22,7 +22,7 @@ end
 describe RSolrCdrh do
   describe '#version' do
     it 'returns version' do
-      expect(RSolrCdrh.version).to eq '1.0.0'
+      expect(RSolrCdrh.version).to eq '2.0.0'
     end
   end
 

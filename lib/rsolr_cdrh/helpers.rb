@@ -17,7 +17,10 @@ module RSolrCdrh
   end
 
   def self.hash_to_s(params)
-    options = params.clone
+    # if params are already a hash, leave them alone,
+    # otherwise assume they are Rails parameters and convert to hash
+    params_hash = params.class == Hash ? params : params.to_unsafe_h
+    options = params_hash.clone
     symbol_params = Hash[options.map do |k, v|
           [k.to_sym, v]
         end
