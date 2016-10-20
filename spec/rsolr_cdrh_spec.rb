@@ -22,7 +22,7 @@ end
 describe RSolrCdrh do
   describe '#version' do
     it 'returns version' do
-      expect(RSolrCdrh.version).to eq '2.0.0'
+      expect(RSolrCdrh.version).to eq '2.1.0'
     end
   end
 
@@ -139,7 +139,7 @@ describe RSolrCdrh::Query do
       expect(facet_p[:sort]).to eq "date desc"
       expect(facet_p[:start]).to eq 0
       expect(facet_p[:rows]).to eq 0
-      expect(facet_p['facet.sort']).to eq "index"
+      expect(facet_p[:'facet.sort']).to eq "index"
     end
   end
 

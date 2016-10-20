@@ -46,6 +46,8 @@ module RSolrCdrh
   end
 
   def self.override_params(existing, requested)
+    existing = self.hash_to_s(existing)
+    requested = self.hash_to_s(requested)
     # if existing, requested share a key, requested will triumph
     return existing.merge(requested)
   end
